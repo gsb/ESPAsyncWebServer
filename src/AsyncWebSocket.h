@@ -177,6 +177,13 @@ class AsyncWebSocketClient {
   public:
     void *_tempObject;
 
+    ///gsb
+    String _clientName;
+    String clientName(String name = "") {
+      return (name.length()>0)?(_clientName=name):_clientName;
+    }
+    ///gsb
+
     AsyncWebSocketClient(AsyncWebServerRequest *request, AsyncWebSocket *server);
     ~AsyncWebSocketClient();
 
@@ -263,6 +270,17 @@ class AsyncWebSocket: public AsyncWebHandler {
     size_t count() const;
     AsyncWebSocketClient * client(uint32_t id);
     bool hasClient(uint32_t id){ return client(id) != NULL; }
+
+    ///gsb
+    AsyncWebSocketClient * findById(uint32_t n);
+    AsyncWebSocketClient * findByName(String name);
+    void removeByName(String name);
+    uint8_t sendToMonitors(String data);
+    uint8_t forEachClient(void (*fp)(AsyncWebSocketClient*));
+    int cleanupClients(uint16_t maxClients = DEFAULT_MAX_WS_CLIENTS);
+
+    //void cleanupClients(uint16_t maxClients = DEFAULT_MAX_WS_CLIENTS);
+    ///gsb
 
     void close(uint32_t id, uint16_t code=0, const char * message=NULL);
     void closeAll(uint16_t code=0, const char * message=NULL);

@@ -499,6 +499,10 @@ AsyncWebSocketClient::AsyncWebSocketClient(AsyncWebServerRequest *request, Async
 }
 
 AsyncWebSocketClient::~AsyncWebSocketClient(){
+  ///gsb
+  _clientName = "";
+  _client->close(true);
+  ///gsb
   _messageQueue.free();
   _controlQueue.free();
   _server->_handleEvent(this, WS_EVT_DISCONNECT, NULL, NULL, 0);
@@ -930,12 +934,85 @@ void AsyncWebSocket::closeAll(uint16_t code, const char * message){
   }
 }
 
-void AsyncWebSocket::cleanupClients(uint16_t maxClients)
+///gsb added methods
+// find by number, ID
+AsyncWebSocketClient * AsyncWebSocket::findById(uint32_t id){
+  for(const auto &c: _clients){
+    if(c->id() == id) {
+      return c;
+    }
+  }
+  return nullptr;
+}
+
+// findByName
+AsyncWebSocketClient * AsyncWebSocket::findByName(String name)
 {
-  if (count() > maxClients){
-    _clients.front()->close();
+  if (name.length() > 0 ) {
+    for(const auto &c: _clients) {
+      if (c->_clientName.equals(name)) {
+        return c;
+      }
+    }
+  }
+  return nullptr;
+}
+
+// removeByName
+void AsyncWebSocket::removeByName(String name) {
+  if (name.length() > 0 ) {
+    for(const auto &c: _clients) {
+      if (c->_clientName.equals(name)) {
+        c->_clientName = "";
+        _clients.remove(c);
+        break;
+      }
+    }
   }
 }
+
+// for each client
+uint8_t AsyncWebSocket::forEachClient(void(*fp)(AsyncWebSocketClient*)) {
+  uint8_t count = 0;
+  for(const auto &c: _clients) {
+    ++count;
+    fp(c);
+  }
+  return count;
+}
+
+// sendToMonitors
+uint8_t AsyncWebSocket::sendToMonitors(String data="!?") {
+  uint8_t count = 0;
+  for(const auto &c: _clients){
+    if (c->status() == WS_CONNECTED) &&
+       (c->clientName()).length() > 0 && 
+       (c->clientName()).startsWith("monitor")) {
+      ++count;
+      c->text(data.c_str());
+    }
+  }
+  return count;
+}
+
+// cleanup registered clients ...simply return total for now.
+int AsyncWebSocket::cleanupClients(uint16_t maxClients) {
+  uint8_t total = 0;
+  for(const auto &c: _clients) {
+    if (c->status() != WS_CONNECTED) _clients.remove(c);
+    ++total;
+  }
+  return total;
+}
+
+  /* Original...
+  void AsyncWebSocket::cleanupClients(uint16_t maxClients)
+  {
+    // Simply delete first in linked-list.
+    if (count() > maxClients){_clients.front()->close();}
+  }
+  */
+///gsb end
 
 void AsyncWebSocket::ping(uint32_t id, uint8_t *data, size_t len){
   AsyncWebSocketClient * c = client(id);
