@@ -985,9 +985,9 @@ uint8_t AsyncWebSocket::forEachClient(void(*fp)(AsyncWebSocketClient*)) {
 uint8_t AsyncWebSocket::sendToMonitors(String data="!?") {
   uint8_t count = 0;
   for(const auto &c: _clients){
-    if (c->status() == WS_CONNECTED) &&
-       (c->clientName()).length() > 0 && 
-       (c->clientName()).startsWith("monitor")) {
+    if (c->status() == WS_CONNECTED &&
+        c->clientName()).length() > 0 && 
+        c->clientName()).startsWith("monitor")) {
       ++count;
       c->text(data.c_str());
     }
